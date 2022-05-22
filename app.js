@@ -60,19 +60,66 @@ const selectRoles = () => {
     connection.query(
         'SELECT * FROM role;',
         (err, results) => {
-            console.table(results); // results contains rows returned by server
+            console.table(results); 
             promptMenu();
         }
     )
 };
 const selectEmployees = () => {
     connection.query(
-        'SELECT * FROM employee;',
+        "SELECT E.id, E.first_name, E.last_name, R.title, D.name AS department, R.salary, CONCAT(M.first_name,' ',M.last_name) AS manager FROM employee E JOIN role R ON E.role_id = R.id JOIN department D ON R.department_id = D.id JOIN employee M ON E.manager_id = M.id;",
         (err, results) => {
-            console.table(results); // results contains rows returned by server
+            console.table(results);
             promptMenu();
         }
     )
 };
+
+const promptAddDepartment = () => {
+    return inquirer.prompt([
+        {
+            type: 'input',
+            name: 'name',
+            message: 'What is the name of the department? (Required)',
+            validate: nameInput => {
+                if (nameInput) {
+                    return true;
+                } else {
+                    console.log('Please enter the name of your department!');
+                    return false;
+                }
+            }
+        },
+    ]).then(answers => {
+        console.log(answers);
+        const manager = new Manager(answers.name, answers.employeeId, answers.email, answers.officeNumber);
+        teamMembers.push(manager);
+        promptMenu();
+    })
+}
+
+const promptAddRole = () => {
+    return connection.promise().query(
+        'SELECT * FROM department;',
+    ).then((res) => {
+        let departments = [];
+        for (let i = 0; i > result[0].length; i++) {
+            departments.push()
+        }
+        console.log(res[0].TextRow.name)
+        return {
+            type: 'list',
+            name: 'menu',
+            message: 'What would you like to do?',
+            choices: departments
+        }
+    }
+    ).catch((err) =>
+        console.log(err)
+    )
+}
+
+
+
 
 promptMenu();
