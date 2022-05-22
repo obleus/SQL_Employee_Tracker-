@@ -99,27 +99,18 @@ const promptAddDepartment = () => {
 }
 
 const promptAddRole = () => {
-    return connection.promise().query(
-        'SELECT * FROM department;',
-    ).then((res) => {
-        let departments = [];
-        for (let i = 0; i > result[0].length; i++) {
-            departments.push()
-        }
-        console.log(res[0].TextRow.name)
-        return {
-            type: 'list',
-            name: 'menu',
-            message: 'What would you like to do?',
-            choices: departments
+
+    function employeeFirstName() {
+        var employees = connection.query('SELECT first_name FROM employee;')
+        for (var i = 0; i < employees.length; i++) {
+            var employee = employees[i];
+            employees.map(employee);
+            console.log(employee);
         }
     }
-    ).catch((err) =>
-        console.log(err)
-    )
+
+    employeeFirstName();
 }
-
-
 
 
 promptMenu();
