@@ -56,5 +56,23 @@ const selectDepartments = () => {
         }
     )
 };
+const selectRoles = () => {
+    connection.query(
+        'SELECT * FROM role;',
+        (err, results) => {
+            console.table(results); // results contains rows returned by server
+            promptMenu();
+        }
+    )
+};
+const selectEmployees = () => {
+    connection.query(
+        'SELECT * FROM employee;',
+        (err, results) => {
+            console.table(results); // results contains rows returned by server
+            promptMenu();
+        }
+    )
+};
 
 promptMenu();
