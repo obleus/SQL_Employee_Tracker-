@@ -1,6 +1,5 @@
 const inquirer = require('inquirer');
 const fs = require("fs");
-const teamMembers = [];
 
 const mysql = require('mysql2');
 require('console.table');
@@ -70,47 +69,48 @@ const selectEmployees = () => {
     connection.query(
         "SELECT E.id, E.first_name, E.last_name, R.title, D.name AS department, R.salary, CONCAT(M.first_name,' ',M.last_name) AS manager FROM employee E JOIN role R ON E.role_id = R.id JOIN department D ON R.department_id = D.id JOIN employee M ON E.manager_id = M.id;",
         (err, results) => {
-            console.table(results); 
+            console.table(results); // results contains rows returned by server
             promptMenu();
         }
     )
 };
 
-const promptAddDepartment = (departmentChoices) => {
 
-    inquirer.prompt([
-        {
-            type: 'list',
-            name: 'departmentName',
-            message: 'What is the name of your department? (Required)',
-            choices: departmentChoices
-        },
-    ]).then(answers => {
-        console.log("answers", answers.departmentName);
 
-        var query =
-            `SELECT e.id, e.first_name, e.last_name, r.title, d.name AS department 
-  FROM employee e
-  JOIN role r
-	ON e.role_id = r.id
-  JOIN department d
-  ON d.id = r.department_id
-  WHERE d.id = ?`
-
-        connection.query(query, answers.departmentName, function (err, res) {
-            if (err) throw err;
-
-            console.table("response ", res);
-            console.log(res.affectedRows + "Employees are viewed!\n");
-
-            promptMenu();
+const promptAddDepartment = () => {
+    inquirer.prompt([{
+        type: 'input',
+        name: 'departmentName',
+        message: 'Name the department you would like to add?',
+        validate: departmentName => {
+            if (departmentName) {
+                return true;
+            } else {
+                console.log('Please enter the name of your department!');
+                return false;
+            }
+        }
+    }
+    ])
+        .then(departmentName => {
+            const query = connection.query(
+                "INSERT INTO department SET ?",
+                {
+                    name: departmentName
+                },
+                function (err, res) {
+                    if (err) throw err;
+                    console.log(departmentName);
+                }
+            )
         })
-    });
+
+        .then(() => selectDepartments())
 }
 
-// 
 
 const promptAddRole = () => {
+
     return connection.promise().query(
         "SELECT department.id, department.name FROM department;"
     )
@@ -122,7 +122,6 @@ const promptAddRole = () => {
                 name: name,
                 value: id
             }));
-
             inquirer.prompt(
                 [{
                     type: 'input',
@@ -159,14 +158,18 @@ const promptAddRole = () => {
                 ]
             )
                 .then(roles => {
+                    
                     console.log(roles);
+                
+
+                    promptAddEmployee(roles);
                 });
 
         })
 }
 
 
-const promptAddEmployee = () => {
+const promptAddEmployee = (roles) => {
 
     return connection.promise().query(
         "SELECT R.id, R.title FROM role R;"
@@ -175,12 +178,10 @@ const promptAddEmployee = () => {
             let titleChoices = employees.map(({
                 id,
                 title
-
             }) => ({
                 title: id,
                 value: title
             }))
-
             inquirer.prompt(
                 [{
                     type: 'input',
@@ -214,6 +215,7 @@ const promptAddEmployee = () => {
                     message: 'What is the employees role?',
                     choices: titleChoices
                 },
+              
                 {
                     type: 'input',
                     name: 'manager',
@@ -227,10 +229,11 @@ const promptAddEmployee = () => {
                         }
                     }
                 }]
-
             ).then(employees => {
+               
                 console.table(employees);
                 console.log(employees + "inserted successfully!\n");
+                resolve(rows);
             });
 
         })
@@ -239,59 +242,45 @@ const promptAddEmployee = () => {
 const promptUpdateRole = () => {
 
     return connection.promise().query(
-        "SELECT department.id, department.name FROM department;"
+        "SELECT E.role_id, E.manager_id, CONCAT(E.first_name,' ',E.last_name) AS employee, CONCAT(M.first_name,' ',M.last_name) AS manager FROM employee E JOIN employee M ON E.manager_id = M.id;"
     )
-        .then(([departments]) => {
-            let departmentChoices = departments.map(({
-                id,
-                name
+        .then(([managers]) => {
+            let managerChoices = managers.map(({
+                manager_id,
+                manager
             }) => ({
-                name: name,
-                value: id
+                name: manager,
+                value: manager_id
+            }));
+            let employeeChoices = managers.map(({
+                role_id,
+                employee
+            }) => ({
+                name: employee,
+                value: role_id
             }));
 
             inquirer.prompt(
                 [{
                     type: 'input',
                     name: 'name',
-                    message: 'Enter the name of your title (Required)',
-                    validate: titleName => {
-                        if (titleName) {
-                            return true;
-                        } else {
-                            console.log('Please enter your title name!');
-                            return false;
-                        }
-                    }
+                    message: 'Which employees manager would you like to update? (Required)',
+                    choices: managerChoices
                 },
                 {
                     type: 'list',
                     name: 'department',
-                    message: 'Which department are you from?',
-                    choices: departmentChoices
-                },
-                {
-                    type: 'input',
-                    name: 'salary',
-                    message: 'Enter your salary (Required)',
-                    validate: salary => {
-                        if (salary) {
-                            return true;
-                        } else {
-                            console.log('Please enter your salary!');
-                            return false;
-                        }
-                    }
+
+                    message: 'Which employee do you want to set as manager for the selected employee?',
+                    choices: employeeChoices
                 }
                 ]
             )
-                .then(roles => {
-                
-                    console.log(roles);
-                  
+                .then(managers => {
+                    // TODO: Update the managers with the responses.
+                    console.log(managers);
                 });
 
         })
 }
-
 promptMenu();
