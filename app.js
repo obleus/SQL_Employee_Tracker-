@@ -53,6 +53,7 @@ const selectDepartments = () => {
         'SELECT * FROM department;',
         (err, results) => {
             console.table(results); 
+            promptMenu();
         });
 };
 
